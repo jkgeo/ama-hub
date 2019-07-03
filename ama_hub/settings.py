@@ -19,9 +19,11 @@
 #########################################################################
 
 # Django settings for the GeoNode project.
+
 import ast
 import os
 from urlparse import urlparse, urlunparse
+
 # Load more settings from a file called local_settings.py if it exists
 try:
     from ama_hub.local_settings import *
@@ -33,6 +35,9 @@ except ImportError:
 # General Django development settings
 #
 PROJECT_NAME = 'ama_hub'
+
+# Add Apps
+INSTALLED_APPS += ('ama_hub.videos',)
 
 # add trailing slash to site url. geoserver url will be relative to this
 if not SITEURL.endswith('/'):
@@ -77,3 +82,33 @@ UNOCONV_ENABLE = strtobool(os.getenv('UNOCONV_ENABLE', 'True'))
 if UNOCONV_ENABLE:
     UNOCONV_EXECUTABLE = os.getenv('UNOCONV_EXECUTABLE', '/usr/bin/unoconv')
     UNOCONV_TIMEOUT = os.getenv('UNOCONV_TIMEOUT', 30)  # seconds
+
+#
+# Videos application
+#
+try:
+    # try to parse python notation, default in dockerized env
+    ALLOWED_VIDEO_TYPES = ast.literal_eval(os.getenv('ALLOWED_VIDEO_TYPES'))
+except ValueError:
+    # fallback to regular list of values separated with misc chars
+    ALLOWED_VIDEO_TYPES = [
+    'mp4'
+] if os.getenv('ALLOWED_VIDEO_TYPES') is None \
+else re.split(r' *[,|:|;] *', os.getenv('ALLOWED_VIDEO_TYPES'))
+
+# MAX_VIDEO_SIZE = int(os.getenv('MAX_VIDEO_SIZE ', '2'))  # MB
+
+# VIDEO_TYPE_MAP and VIDEO_MIMETYPE_MAP update enumerations in
+# videos/enumerations.py and should only
+# need to be uncommented if adding other types
+# to settings.ALLOWED_VIDEO_TYPES
+
+# VIDEO_TYPE_MAP = {}
+# VIDEO_MIMETYPE_MAP = {}
+
+#
+# ResourceBase API
+#
+
+RESOURCEBASE_TYPES = ["map", "layer", "document", "user", "video",]
+

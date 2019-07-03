@@ -23,9 +23,14 @@ from django.views.generic import TemplateView
 
 from geonode.urls import urlpatterns
 
-urlpatterns += [
-## include your urls here
+from geonode.api.urls import api
+from .videos.api import VideoResource
 
+api.register(VideoResource())
+
+urlpatterns += [
+	url(r'', include(api.urls)),
+	url(r'^videos/', include('ama_hub.videos.urls')),
 ]
 
 urlpatterns = [

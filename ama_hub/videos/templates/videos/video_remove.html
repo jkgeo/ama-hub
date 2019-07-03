@@ -1,0 +1,26 @@
+{% extends "videos/video_base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Deleting" %} {{ video.title }} — {{ block.super }}{% endblock %}
+
+{% block body %}
+<div class="page-header">
+  <h2 class="page-title">{% trans "Remove Video" %}</h2>
+</div>
+<div class="row">
+  <div class="col-md-8">
+    <p class="lead">
+        {% blocktrans with video.title as video_title %}
+          Are you sure you want to remove <a href="{{ video.get_absolute_url }}">{{ video_title }}</a>?
+        {% endblocktrans %}
+      </p>
+    <form action="{% url "video_remove" video.id %}" method="POST">
+      {% csrf_token %}
+      <div class="form-actions">
+        <input type="submit" value="{% trans "Yes, I am sure" %}" class="btn btn-danger" />
+        <a href="{{ video.get_absolute_url }}" class="btn btn-default">{% trans "No, don't remove it" %}</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
