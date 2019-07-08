@@ -27,25 +27,25 @@ from geonode.security.views import _perms_info_json
 from geonode.people.forms import ProfileForm
 from geonode.base.forms import CategoryForm
 from geonode.base.models import TopicCategory
+from ama_hub.videos.models import Video, get_related_resources
+from ama_hub.videos.forms import VideoForm, VideoCreateForm, VideoReplaceForm
+from ama_hub.videos.models import IMGTYPES
+from ama_hub.videos.renderers import generate_thumbnail_content, MissingPILError
 from geonode.utils import build_social_links
 from geonode.groups.models import GroupProfile
 from geonode.base.views import batch_modify
 
-from .models import Video, get_related_resources
-from .forms import VideoForm, VideoCreateForm, VideoReplaceForm
-from .models import IMGTYPES
-from .renderers import generate_thumbnail_content, MissingPILError
 
-logger = logging.getLogger("ama_geonode.videos.views")
+logger = logging.getLogger("ama_hub.videos.views")
 
-ALLOWED_VID_TYPES = settings.ALLOWED_VIDEO_TYPES
+ALLOWED_DOC_TYPES = settings.ALLOWED_DOCUMENT_TYPES
 
-_PERMISSION_MSG_DELETE = _("You are not permitted to delete this video.")
+_PERMISSION_MSG_DELETE = _("You are not permitted to delete this video")
 _PERMISSION_MSG_GENERIC = _("You do not have permissions for this video.")
-_PERMISSION_MSG_MODIFY = _("You are not permitted to modify this video.")
+_PERMISSION_MSG_MODIFY = _("You are not permitted to modify this video")
 _PERMISSION_MSG_METADATA = _(
-    "You are not permitted to modify this video's metadata.")
-_PERMISSION_MSG_VIEW = _("You are not permitted to view this video.")
+    "You are not permitted to modify this video's metadata")
+_PERMISSION_MSG_VIEW = _("You are not permitted to view this video")
 
 
 def _resolve_video(request, vidid, permission='base.change_resourcebase',
@@ -110,7 +110,7 @@ def video_detail(request, vidid):
         context_dict = {
             'perms_list': get_perms(
                 request.user,
-                video.get_self_resource()),
+                video.get_self_resource()) + get_perms(request.user, video),
             'permissions_json': _perms_info_json(video),
             'resource': video,
             'group': group,
@@ -124,12 +124,17 @@ def video_detail(request, vidid):
 
         if getattr(settings, 'EXIF_ENABLED', False):
             try:
-                from geonode.contrib.exif.utils import exif_extract_dict
+                from ama_hub.videos.exif.utils import exif_extract_dict
                 exif = exif_extract_dict(video)
                 if exif:
                     context_dict['exif_data'] = exif
             except BaseException:
                 print "Exif extraction failed."
+
+        if request.user.is_authenticated():
+            if getattr(settings, 'FAVORITE_ENABLED', False):
+                from geonode.favorite.utils import get_favorite_info
+                context_dict["favorite_info"] = get_favorite_info(request.user, video)
 
         return render(
             request,
@@ -151,7 +156,7 @@ def video_download(request, vidid):
             loader.render_to_string(
                 '401.html', context={
                     'error_message': _("You are not allowed to view this video.")}, request=request), status=401)
-    return DownloadResponse(video.video_file)
+    return DownloadResponse(video.vid_file)
 
 
 class VideoUploadView(CreateView):
@@ -160,7 +165,7 @@ class VideoUploadView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(VideoUploadView, self).get_context_data(**kwargs)
-        context['ALLOWED_VID_TYPES'] = ALLOWED_VID_TYPES
+        context['ALLOWED_DOC_TYPES'] = ALLOWED_DOC_TYPES
         return context
 
     def form_invalid(self, form):
@@ -175,9 +180,8 @@ class VideoUploadView(CreateView):
         else:
             form.name = None
             form.title = None
-            form.video_file = None
-            form.video_url = None
-            # form.video_embed_url = None
+            form.vid_file = None
+            form.vid_url = None
             return self.render_to_response(self.get_context_data(form=form))
 
     def form_valid(self, form):
@@ -186,10 +190,10 @@ class VideoUploadView(CreateView):
         """
         self.object = form.save(commit=False)
         self.object.owner = self.request.user
-        # by default, if RESOURCE_PUBLISHING=True then document.is_published
+        # by default, if RESOURCE_PUBLISHING=True then video.is_published
         # must be set to False
         # RESOURCE_PUBLISHING works in similar way as ADMIN_MODERATE_UPLOADS,
-        # but is applied to documents only. ADMIN_MODERATE_UPLOADS has wider
+        # but is applied to videos only. ADMIN_MODERATE_UPLOADS has wider
         # usage
         is_published = not (
             settings.RESOURCE_PUBLISHING or settings.ADMIN_MODERATE_UPLOADS)
@@ -208,7 +212,7 @@ class VideoUploadView(CreateView):
 
         if getattr(settings, 'EXIF_ENABLED', False):
             try:
-                from geonode.contrib.exif.utils import exif_extract_metadata_doc
+                from ama_hub.videos.exif.utils import exif_extract_metadata_doc
                 exif_metadata = exif_extract_metadata_doc(self.object)
                 if exif_metadata:
                     date = exif_metadata.get('date', None)
@@ -217,16 +221,6 @@ class VideoUploadView(CreateView):
                     abstract = exif_metadata.get('abstract', None)
             except BaseException:
                 print "Exif extraction failed."
-
-        if getattr(settings, 'NLP_ENABLED', False):
-            try:
-                from geonode.contrib.nlp.utils import nlp_extract_metadata_doc
-                nlp_metadata = nlp_extract_metadata_doc(self.object)
-                if nlp_metadata:
-                    regions.extend(nlp_metadata.get('regions', []))
-                    keywords.extend(nlp_metadata.get('keywords', []))
-            except BaseException:
-                print "NLP extraction failed."
 
         if abstract:
             self.object.abstract = abstract
@@ -251,16 +245,7 @@ class VideoUploadView(CreateView):
                 bbox_y0=bbox_y0,
                 bbox_y1=bbox_y1)
 
-        if getattr(settings, 'SLACK_ENABLED', False):
-            try:
-                from geonode.contrib.slack.utils import build_slack_message_document, send_slack_message
-                send_slack_message(
-                    build_slack_message_document(
-                        "video_new", self.object))
-            except BaseException:
-                print "Could not send slack message for new video."
-
-        if settings.MONITORING_ENABLED and self.object:
+        if getattr(settings, 'MONITORING_ENABLED', False) and self.object:
             if hasattr(self.object, 'alternate'):
                 self.request.add_resource('video', self.object.alternate)
 
@@ -297,7 +282,7 @@ class VideoUpdateView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super(VideoUpdateView, self).get_context_data(**kwargs)
-        context['ALLOWED_VID_TYPES'] = ALLOWED_VID_TYPES
+        context['ALLOWED_DOC_TYPES'] = ALLOWED_DOC_TYPES
         return context
 
     def form_valid(self, form):
@@ -361,7 +346,8 @@ def video_metadata(
                 instance=video,
                 prefix="resource")
             category_form = CategoryForm(request.POST, prefix="category_choice_field", initial=int(
-                request.POST["category_choice_field"]) if "category_choice_field" in request.POST else None)
+                request.POST["category_choice_field"]) if "category_choice_field" in request.POST and
+                request.POST["category_choice_field"] else None)
         else:
             video_form = VideoForm(instance=video, prefix="resource")
             category_form = CategoryForm(
@@ -374,8 +360,12 @@ def video_metadata(
             new_author = video_form.cleaned_data['metadata_author']
             new_keywords = video_form.cleaned_data['keywords']
             new_regions = video_form.cleaned_data['regions']
-            new_category = TopicCategory.objects.get(
-                id=category_form.cleaned_data['category_choice_field'])
+
+            new_category = None
+            if category_form and 'category_choice_field' in category_form.cleaned_data and\
+            category_form.cleaned_data['category_choice_field']:
+                new_category = TopicCategory.objects.get(
+                    id=int(category_form.cleaned_data['category_choice_field']))
 
             if new_poc is None:
                 if poc is None:
@@ -428,15 +418,6 @@ def video_metadata(
             Video.objects.filter(
                 id=the_video.id).update(
                 category=new_category)
-
-            if getattr(settings, 'SLACK_ENABLED', False):
-                try:
-                    from geonode.contrib.slack.utils import build_slack_message_document, send_slack_messages
-                    send_slack_messages(
-                        build_slack_message_document(
-                            "video_edit", the_video))
-                except BaseException:
-                    print "Could not send slack message for modified video."
 
             if not ajax:
                 return HttpResponseRedirect(
@@ -502,6 +483,7 @@ def video_metadata(
             "author_form": author_form,
             "category_form": category_form,
             "metadata_author_groups": metadata_author_groups,
+            "TOPICCATEGORY_MANDATORY": getattr(settings, 'TOPICCATEGORY_MANDATORY', False),
             "GROUP_MANDATORY_RESOURCES": getattr(settings, 'GROUP_MANDATORY_RESOURCES', False),
         })
 
@@ -626,25 +608,7 @@ def video_remove(request, vidid, template='videos/video_remove.html'):
             })
 
         if request.method == 'POST':
-
-            if getattr(settings, 'SLACK_ENABLED', False):
-                slack_message = None
-                try:
-                    from geonode.contrib.slack.utils import build_slack_message_document
-                    slack_message = build_slack_message_document(
-                        "video_delete", video)
-                except BaseException:
-                    print "Could not build slack message for delete video."
-
-                video.delete()
-
-                try:
-                    from geonode.contrib.slack.utils import send_slack_messages
-                    send_slack_messages(slack_message)
-                except BaseException:
-                    print "Could not send slack message for delete video."
-            else:
-                video.delete()
+            video.delete()
 
             return HttpResponseRedirect(reverse("video_browse"))
         else:
@@ -680,8 +644,7 @@ def video_metadata_detail(
         'SITEURL': site_url
     })
 
-### REVISIT
-#Not messing with this
-# @login_required
-# def document_batch_metadata(request, ids):
-#     return batch_modify(request, ids, 'Document')
+
+@login_required
+def video_batch_metadata(request, ids):
+    return batch_modify(request, ids, 'Video')

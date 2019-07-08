@@ -20,6 +20,10 @@ from geonode.base.models import ResourceBase, resourcebase_post_save, Link
 from geonode.maps.signals import map_changed_signal
 from geonode.maps.models import Map
 from geonode.security.utils import remove_object_permissions
+from geonode.favorite.models import FavoriteManager, Favorite
+
+from geonode.documents.models import Document
+from geonode.layers.models import Layer
 
 from .enumerations import VIDEO_TYPE_MAP, VIDEO_MIMETYPE_MAP
 
@@ -215,3 +219,27 @@ signals.post_save.connect(post_save_video, sender=Video)
 signals.post_save.connect(resourcebase_post_save, sender=Video)
 signals.pre_delete.connect(pre_delete_video, sender=Video)
 map_changed_signal.connect(update_video_extent)
+
+###
+
+# Extended Favorites Application
+# Enable Favoriting of Videos
+ 
+###
+
+class ModFavoriteManager(FavoriteManager):
+
+    def favorite_videos_for_user(self, user):
+        return self._favorite_ct_for_user(user, Video)
+
+    def bulk_favorite_objects(self, user):
+        'get the actual favorite objects for a user as a dict by content_type'
+        favs = {}
+        for m in (Document, Map, Layer, Video, get_user_model()):
+            ct = ContentType.objects.get_for_model(m)
+            f = self.favorites_for_user(user).filter(content_type=ct)
+            favs[ct.name] = m.objects.filter(id__in=f.values('object_id'))
+        return favs
+
+class ModFavorite(Favorite):
+    objects = ModFavoriteManager()
