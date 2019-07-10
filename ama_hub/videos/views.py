@@ -122,14 +122,14 @@ def video_detail(request, vidid):
             context_dict["social_links"] = build_social_links(
                 request, video)
 
-        if getattr(settings, 'EXIF_ENABLED', False):
-            try:
-                from ama_hub.videos.exif.utils import exif_extract_dict
-                exif = exif_extract_dict(video)
-                if exif:
-                    context_dict['exif_data'] = exif
-            except BaseException:
-                print "Exif extraction failed."
+        # if getattr(settings, 'EXIF_ENABLED', False):
+        #     try:
+        #         from ama_hub.videos.exif.utils import exif_extract_dict
+        #         exif = exif_extract_dict(video)
+        #         if exif:
+        #             context_dict['exif_data'] = exif
+        #     except BaseException:
+        #         print "Exif extraction failed."
 
         if request.user.is_authenticated():
             if getattr(settings, 'FAVORITE_ENABLED', False):

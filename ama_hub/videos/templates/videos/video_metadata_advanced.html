@@ -6,7 +6,7 @@
 
 {% block title %}{{ video.alternate }} — {{ block.super }}{% endblock %}
 
-{% block body_class %}data{% endblock %}
+{% block body_class %}{% trans "data" %}{% endblock %}
 
 {% block body_outer %}
 
@@ -102,7 +102,7 @@
 {{ block.super }}
 <script type="text/javascript">
     $("#id_resource-links").select2({
-        placeholder: "Select an option",
+        placeholder: "{% trans "Select an option" %}",
         allowClear: true
     });
 </script>
