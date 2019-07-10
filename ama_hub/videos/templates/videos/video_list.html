@@ -13,9 +13,9 @@
   {% endif %}
   <h2>{% trans "Explore Videos" %}</h2>
 </div>
-  {% with include_type_filter='false' %}
+  {% with include_type_filter='true' %}
   {% with header='Video Type' %}
-  {% with filter='doc_type__in' %}
+  {% with filter='video_type__in' %}
   {% include "search/_search_content.html" %}
   {% endwith %}
   {% endwith %}

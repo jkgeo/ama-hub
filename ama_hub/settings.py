@@ -112,3 +112,9 @@ else re.split(r' *[,|:|;] *', os.getenv('ALLOWED_VIDEO_TYPES'))
 
 RESOURCEBASE_TYPES = ["map", "layer", "document", "user", "video",]
 
+#
+# Template Tag
+#
+
+RESOURCE_CONTEXT = ['layers', 'maps', 'documents', 'search', 'people',
+                    'groups', 'links', 'videos']
