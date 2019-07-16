@@ -1,0 +1,148 @@
+body, h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+  color: #343a40;
+}
+
+.navbar-brand {
+  background: transparent url("../img/AMA-logo.png") no-repeat scroll;
+  background-size: contain;
+  text-indent: 60px;
+  margin: 0.25em;
+}
+
+.home .navbar-inverse {
+    background-color: rgba(255, 255, 255);
+}
+
+.home .jumbotron {
+  background: url("../img/green-unsplash.jpg") no-repeat center ;
+  background-size: cover;
+  text-shadow: 2px 2px 2px rgb(0, 0, 0);
+  text-align: center;
+}
+
+.home .jumbotron p {
+  font-family: 'Lato', sans-serif;
+  font-weight: bold;
+}
+
+.home .big-search {
+  background-color: #292d32;
+}
+
+.home .big-search .btn-default{
+  font-weight: bold;
+  color: #f0ad4e;
+}
+
+.home #showcase {
+  background-color: #ffffff;
+}
+
+.home-facets a {
+  color: #292d32;
+}
+
+.home-facets a:hover {
+  color: #02B875;
+}
+
+.home a.btn.btn-success {
+  color: #ffffff;
+  font-weight: bold;
+}
+
+footer {
+  background-color: #292d32;
+}
+
+footer a:hover {
+  color: #f0ad4e;
+}
+
+footer li {
+  font-family: 'Lato', sans-serif;
+}
+
+footer li a {
+  color: #eeeeee;
+  font-weight: normal;
+  font-family: 'Lato', sans-serif;
+  text-decoration: none;
+}
+
+footer #top {
+  color: #f0ad4e;
+  font-family: 'Lato', sans-serif;
+  text-decoration: underline;
+  font-weight: bold;
+}
+
+i.fa.fa-navicon.fa-lg {
+  color: #333333;
+}
+.navbar-nav .dropdown-menu {
+  background-color: #ffffff;
+  border-top-color: rgba(0, 0, 0, 0.15);
+}
+
+.navbar-nav .dropdown-menu a {
+  color: #333333;
+}
+
+.navbar-nav .dropdown-menu li a:hover {
+  background-color: #02B875;
+}
+
+.navbar-inverse .navbar-nav .open .dropdown-menu .divider {
+  background-color: #dddddd;
+}
+
+nav.filter h4 {
+  background-color: #292d32;
+  font-weight: bold;
+}
+
+nav.filter .active {
+  font-weight: bold;
+  font-style: italic;
+  text-decoration: underline;
+  color: #02B875;
+}
+
+nav.filter .active .badge {
+  background: #02B875;
+}
+
+#id_ext_link_url {
+  width: 100%;
+}
+
+div#treeview {
+  display: block;
+  overflow: overlay;
+  height: 12em;
+  padding: 5px;
+  background-color: #eeeeee;
+  border-radius: 3px
+}
+
+ul.list-group {
+  width: 95%;
+}
+
+#lang_select {
+  box-shadow: none !important;
+  text-align: right !important;
+}
+
+@media (min-width: 1400px) {
+  .container {
+    width: 1370px !important;
+  }
+}
+
+@media (min-width: 1600px) {
+  .container {
+    width: 1570px !important;
+  }
+}

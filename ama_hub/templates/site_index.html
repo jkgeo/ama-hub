@@ -1,8 +1,7 @@
 {% extends 'index.html' %}
 {% load i18n %}
-{% comment %}
-This is where you can override the hero area block. You can simply modify the content below or replace it wholesale to meet your own needs.
-{% endcomment %}
+{% load resource_tags %}
+
 {% block hero %}
 <div class="jumbotron">
   <div class="container">
@@ -12,6 +11,92 @@ This is where you can override the hero area block. You can simply modify the co
       {% if not custom_theme.jumbotron_cta_hide %}
       <p><a class="btn btn-default btn-lg" target="_blank" href="{{custom_theme.jumbotron_cta_link|default:_("http://docs.geonode.org/en/master/usage/")}}" role="button">{{custom_theme.jumbotron_cta_text|default:_("Get Started &raquo;")}}</a></p>
       {% endif %}
+      <br>
+      <h2>
+      	{% trans "If you would like to contribute to this site" %} 
+      	<a href="https://docs.google.com/forms/d/e/1FAIpQLScitG72YeAzqaRQ9akF9-ptkSQYShlLkptK9cHju7qPlifARw/viewform?usp=sf_link" target="_blank">Click Here!
+      	</a>
+      </h2>
   </div>
 </div>
 {% endblock hero %}
+
+{% block datasets %}
+{% endblock datasets %}
+
+{% block showcase %}
+<section id="showcase">
+  <div class="row">
+    <div class="container text-center">
+      <h2>Featured Resources</h2>
+      <div class="row home-facets">
+      {% with facet_type='home' %}
+       {% facets as facets %}
+        <div class="col-md-4">
+         <p><a href="{% url "document_browse" %}"><i class="fa fa-newspaper-o fa-4x"></i></a></p>
+         <h2><a href="{% url "document_browse" %}">{{ facets.document|default:_("No") }} {% blocktrans count counter=facets.document %}Document{% plural %}Documents{% endblocktrans %}</a></h2>
+         <!-- <p>{% trans "As for the layers and maps GeoNode allows to publish tabular and text data, manage theirs metadata and associated documents." %}</p> -->
+         {% if user.is_authenticated %}
+         <p class="text-center"><a class="btn btn-success" href="{% url "document_browse" %}" role="button">{% trans "Add documents" %} &raquo;</a></p>
+         {% else %}
+         <p class="text-center"><a class="btn btn-success" href="{% url "document_browse" %}" role="button">{% trans "Explore documents" %} &raquo;</a></p>
+         {% endif %}
+        </div>
+
+        <div class="col-md-4">
+         <p><a href="{% url "video_browse" %}"><i class="fa fa-play-circle-o fa-4x"></i></a></p>
+         <h2><a href="{% url "video_browse" %}">{{ facets.video|default:_("No") }} {% blocktrans count counter=facets.video %}Video{% plural %}Videos{% endblocktrans %}</a></h2>
+         <!-- <p>{% trans "As for the layers and maps GeoNode allows to publish tabular and text data, manage theirs metadata and associated documents." %}</p> -->
+         {% if user.is_authenticated %}
+         <p class="text-center"><a class="btn btn-success" href="{% url "video_browse" %}" role="button">{% trans "Add Videos" %} &raquo;</a></p>
+         {% else %}
+         <p class="text-center"><a class="btn btn-success" href="{% url "video_browse" %}" role="button">{% trans "Explore videos" %} &raquo;</a></p>
+         {% endif %}
+        </div>
+        <div class="col-md-4">
+          <p><a href="{% url "layer_browse" %}"><i class="fa fa-map-marker fa-4x"></i></a></p>
+          <h2><a href="{% url "layer_browse" %}">{{ facets.layer|default:_("No") }} {% blocktrans count counter=facets.layer %}Map Layer{% plural %}Map Layers{% endblocktrans %}</a></h2>
+          <!-- <p>{% trans "Click to search for geospatial data published by other users, organizations and public sources. Download data in standard formats." %}</p> -->
+          {% if user.is_authenticated %}
+          <p class="text-center"><a class="btn btn-success" href="{% url "layer_upload" %}" role="button">{% trans "Add layers" %} &raquo;</a></p>
+          {% else %}
+          <p class="text-center"><a class="btn btn-success" href="{% url "layer_browse" %}" role="button">{% trans "Explore map layers" %} &raquo;</a></p>
+          {% endif %}
+        </div>
+        <div class="col-md-4">
+          <p><a href="{% url "maps_browse" %}"><i class="fa fa-map-o fa-4x"></i></a></p>
+          <h2><a href="{% url "maps_browse" %}">{{ facets.map|default:_("No") }} {% blocktrans count counter=facets.map %}Custom Map{% plural %}Custom Maps{% endblocktrans %}</a></h2>
+          <!-- <p>{% trans "Data is available for browsing, aggregating and styling to generate maps which can be saved, downloaded, shared publicly or restricted to specify users only." %}</p> -->
+          {% if user.is_authenticated %}
+          <p><a class="btn btn-success" href="{% url "new_map" %}" role="button">{% trans "Create maps" %} &raquo;</a></p>
+          {% else %}
+          <p><a class="btn btn-success" href="{% url "maps_browse" %}" role="button">{% trans "Explore custom maps" %} &raquo;</a></p>
+          {% endif %}
+        </div>
+        <div class="col-md-4">
+          <p><a href="{% url "profile_browse" %}"><i class="fa fa-user fa-4x"></i></a></p>
+          <h2><a href="{% url "profile_browse" %}">{{ facets.user|default:_("No") }} {% blocktrans count counter=facets.user %}Contributor{% plural %}Contributors{% endblocktrans %}</a></h2>
+          <!-- <p>{% trans "Geonode allows registered users to easily upload geospatial data and various documents in several formats." %}</p> -->
+          <p><a class="btn btn-success" href="{% url "profile_browse" %}" role="button">{% trans "See contributors" %} &raquo;</a></p>
+        </div>
+      {% endwith %}
+      </div>
+    </div>
+  </div>
+  <div class="row">
+      <div class="container text-center">
+          {% verbatim %}
+          <div ng-app="featured">
+            <div ng-repeat="item in featured | limitTo:4">
+              <div class="col-md-3">
+                <a href="{{ item.detail_url }}"><img ng-src="{{ item.thumbnail_url }}" /></a>
+                <h4>{{ item.title | limitTo: 20 }}{{item.title.length > 20 ? '...' : ''}}</h4>
+              </div>
+            </div>
+          </div>
+        {% endverbatim %}
+          <p><a class="btn btn-primary btn-lg" href="/search/"><strong>Explore All Resources</strong></a></p>
+      </div>
+  </div>
+</section>
+{% endblock showcase %}
